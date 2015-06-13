@@ -15,6 +15,7 @@ import android.graphics.LinearGradient;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.PorterDuff;
 import android.graphics.Shader.TileMode;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
@@ -39,7 +40,7 @@ public class MyView extends View {
     
     private Canvas mCanvas;
     private Bitmap mBitmap;
-    //todo removed private Bitmap mAlphaBitmap; \
+    private Bitmap mAlphaBitmap;
     private int []mOffset = new int[2];
     
     private Point mGradStart;
@@ -171,6 +172,7 @@ public class MyView extends View {
 	    
         // there are 15 cells in a row and 1 padding at each side
         SmallTile.sCellWidth = Math.round(mWidth / 17.0f);
+        shuffleTiles();
     }
 
     private SmallTile hitTest(float x, float y) {
@@ -262,12 +264,37 @@ public class MyView extends View {
         return retVal || super.onTouchEvent(e);
     }
 
+    private static final EmbossMaskFilter filter = new EmbossMaskFilter(new float[]{1, 1, 1}, 0.5f, 0.6f, 2f);
+    private static Canvas helperCanvas;
+    private static Paint paintEmboss;
+
+
+    public  Canvas getHelperCanvas(int width, int height){
+        if (mAlphaBitmap == null) {
+            mAlphaBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            helperCanvas = new Canvas(mAlphaBitmap);
+            paintEmboss = new Paint();
+            paintEmboss.setColor(Color.BLACK);
+        }
+        return helperCanvas;
+    }
+
     private void prepareBitmaps() {
-        mBitmap.eraseColor(Color.TRANSPARENT);
+        mCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+        helperCanvas = getHelperCanvas(mBitmap.getWidth(),mBitmap.getHeight());
+        helperCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+        paintEmboss.setMaskFilter(null);
+        paintEmboss.setAlpha(255);
         for (SmallTile tile: mTiles) {
         	if (!tile.visible)
         		continue;
-        	
+
+            helperCanvas.drawRect(tile.left,
+                    tile.top,
+                    tile.left + tile.width,
+                    tile.top + tile.height,
+                    paintEmboss);
+
             mCanvas.drawRect(
             		tile.left, 
             		tile.top, 
@@ -276,8 +303,10 @@ public class MyView extends View {
             		mPaintGrad);
             tile.draw(mCanvas);
         }
-        
-       //todo removed mAlphaBitmap = mBitmap.extractAlpha(mPaintBlur, mOffset);
+
+        paintEmboss.setMaskFilter(filter);
+        Bitmap alpha = mAlphaBitmap.extractAlpha();
+        helperCanvas.drawBitmap(alpha, 0, 0, paintEmboss);
         Log.d("prepareBitmaps", "mScale = " + mScale);
         Log.d("prepareBitmaps", "offset = (" + mOffset[0] + ", " + mOffset[1] + ")");
    }
@@ -367,10 +396,10 @@ public class MyView extends View {
 			mGradEnd.y,
 			mPaintRed);
 */
+        paintEmboss.setAlpha(255); //todo change alpha here
+        if(mAlphaBitmap!= null)canvas.drawBitmap(mAlphaBitmap, 0,0, paintEmboss);
+        if(mBitmap!= null)canvas.drawBitmap(mBitmap, 0, 0, mPaintGrad);
 
-        //todo removed canvas.drawBitmap(mAlphaBitmap, mOffset[0] + 1 * mScale, mOffset[1] + 1 * mScale, mPaintBlur);
-        canvas.drawBitmap(mBitmap, 0, 0, mPaintGrad);
-       
         mBigTile.draw(canvas);
     }
 

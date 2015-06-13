@@ -63,37 +63,10 @@ public class SmallTile {
         BitmapDrawable d = (BitmapDrawable) sLetters.get(mLetter);
 
         d.draw(canvas);
-        canvas.drawBitmap(processingBitmap_Emboss(d.getBitmap()),0,0,d.getPaint()); //todo add this line
         canvas.restore();
     }
 
-    //todo code from here to
-    private static final EmbossMaskFilter filter = new EmbossMaskFilter(new float[]{1, 1, 1}, 0.5f, 0.6f, 2f);
-    private static Bitmap helperBitmap;
-    private static Canvas helperCanvas;
-    private static Paint paintEmboss;
 
-    public static Bitmap processingBitmap_Emboss(Bitmap src){
-        return processingBitmap_Emboss(src, filter);
-    }
-
-    public static Bitmap processingBitmap_Emboss(Bitmap src,  EmbossMaskFilter embossMaskFilter){
-        if (helperBitmap == null) {
-            int width = src.getWidth();
-            int height = src.getHeight();
-            helperBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-            helperCanvas = new Canvas(helperBitmap);
-            paintEmboss = new Paint();
-            paintEmboss.setMaskFilter(embossMaskFilter);
-        }
-        helperCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-        //helperCanvas.drawColor(Color.TRANSPARENT);
-        Bitmap alpha = src.extractAlpha();
-        helperCanvas.drawBitmap(alpha, 0, 0, paintEmboss);
-        alpha.recycle();
-        return helperBitmap;
-    }
-    //todo to here
 
 	public boolean contains(int x, int y) {
 		return x >= left && 
