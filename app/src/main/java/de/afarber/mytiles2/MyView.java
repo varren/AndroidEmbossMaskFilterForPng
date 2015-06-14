@@ -334,45 +334,60 @@ public class MyView extends View {
             mMatrix.postTranslate(dX, dY);
             postInvalidateDelayed(30);
         }
-
+        canvas.clipRect(0,0, getWidth(),getHeight());
         canvas.concat(mMatrix);
 
-        canvas.drawBitmap(mBitmap,0,0,simplePaint);
+        mGameBoard.draw(canvas);
+        //prepareBitmaps(canvas);
+        canvas.drawBitmap(mBitmap, 0, 0, simplePaint);
+
+        for (SmallTile tile: mTiles) {
+            if (tile.visible) {
+                tile.draw(canvas);
+            }
+        }
+
         mBigTile.draw(canvas);
     }
 
-    private static final EmbossMaskFilter filter = new EmbossMaskFilter(new float[]{1, 1, 1}, 0.5f, 0.6f, 2f);
-    private static Paint paintEmboss = new Paint();
+    private final EmbossMaskFilter filter =
+            new EmbossMaskFilter(new float[] { 0f, 1f, 0.5f }, 0.8f, 3f, 3f);
+    private Paint paintEmboss = new Paint();
     private Paint simplePaint = new Paint();
-    private static Canvas helperCanvas;
+    private Canvas mAlphaCanvas;
 
     private void prepareBitmaps() {
+        //just dont do anything
+        mCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+        prepareBitmaps(mCanvas);
+    }
+
+    private void prepareBitmaps(Canvas canvas) {
         if (mAlphaBitmap == null) {
             mAlphaBitmap = Bitmap.createBitmap(mBitmap.getWidth(), mBitmap.getHeight(), Bitmap.Config.ARGB_8888);
-            helperCanvas = new Canvas(mAlphaBitmap);
+            mAlphaCanvas = new Canvas(mAlphaBitmap);
             paintEmboss = new Paint();
             paintEmboss.setColor(Color.BLACK);
             paintEmboss.setAlpha(100);
             paintEmboss.setMaskFilter(filter);
+            simplePaint.setAntiAlias(true);
         }
 
-        helperCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-        mGameBoard.draw(mCanvas);
+        mAlphaCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
         for (SmallTile tile: mTiles) {
             if (tile.visible) {
-                helperCanvas.drawRect(tile.left, tile.top, tile.left + tile.width, tile.top + tile.height, simplePaint);
+                mAlphaCanvas.drawRect(tile.left, tile.top, tile.left + tile.width, tile.top + tile.height, simplePaint);
             }
         }
 
         Bitmap alpha = mAlphaBitmap.extractAlpha();
-        mCanvas.drawBitmap(alpha, 0, 0, paintEmboss);
+        canvas.drawBitmap(alpha, 0, 0, paintEmboss);
         alpha.recycle();
 
         for (SmallTile tile: mTiles) {
             if (tile.visible) {
-                mCanvas.drawRect(tile.left,tile.top,tile.left + tile.width,tile.top + tile.height,mPaintGrad);
-                tile.draw(mCanvas);
+                canvas.drawRect(tile.left, tile.top, tile.left + tile.width, tile.top + tile.height, mPaintGrad);
             }
         }
 
