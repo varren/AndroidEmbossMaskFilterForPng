@@ -334,11 +334,12 @@ public class MyView extends View {
             mMatrix.postTranslate(dX, dY);
             postInvalidateDelayed(30);
         }
-        canvas.clipRect(0,0, getWidth(),getHeight());
+        //canvas.clipRect(0,0, getWidth(),getHeight());
         canvas.concat(mMatrix);
 
         mGameBoard.draw(canvas);
         //prepareBitmaps(canvas);
+        canvas.drawBitmap(mAlphaBitmap, 0, 0, simplePaint);
         canvas.drawBitmap(mBitmap, 0, 0, simplePaint);
 
         for (SmallTile tile: mTiles) {
@@ -351,7 +352,7 @@ public class MyView extends View {
     }
 
     private final EmbossMaskFilter filter =
-            new EmbossMaskFilter(new float[] { 0f, 1f, 0.5f }, 0.8f, 3f, 3f);
+            new EmbossMaskFilter(new float[]{0.5f, 1, 0.5f}, 0.5f, 0.6f, 2f);
     private Paint paintEmboss = new Paint();
     private Paint simplePaint = new Paint();
     private Canvas mAlphaCanvas;
@@ -382,8 +383,12 @@ public class MyView extends View {
         }
 
         Bitmap alpha = mAlphaBitmap.extractAlpha();
-        canvas.drawBitmap(alpha, 0, 0, paintEmboss);
+        //canvas.drawBitmap(alpha, 0, 0, paintEmboss);
+        mAlphaCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+        mAlphaCanvas.drawBitmap(alpha, 0, 0, paintEmboss);
         alpha.recycle();
+
+
 
         for (SmallTile tile: mTiles) {
             if (tile.visible) {
