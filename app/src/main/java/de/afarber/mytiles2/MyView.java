@@ -264,53 +264,9 @@ public class MyView extends View {
         return retVal || super.onTouchEvent(e);
     }
 
-    private static final EmbossMaskFilter filter = new EmbossMaskFilter(new float[]{1, 1, 1}, 0.5f, 0.6f, 2f);
-    private static Canvas helperCanvas;
-    private static Paint paintEmboss;
 
 
-    public  Canvas getHelperCanvas(int width, int height){
-        if (mAlphaBitmap == null) {
-            mAlphaBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-            helperCanvas = new Canvas(mAlphaBitmap);
-            paintEmboss = new Paint();
-            paintEmboss.setColor(Color.BLACK);
-        }
-        return helperCanvas;
-    }
 
-    private void prepareBitmaps() {
-        mCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-        helperCanvas = getHelperCanvas(mBitmap.getWidth(),mBitmap.getHeight());
-        helperCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-        paintEmboss.setMaskFilter(null);
-        paintEmboss.setAlpha(255);
-        for (SmallTile tile: mTiles) {
-        	if (!tile.visible)
-        		continue;
-
-            helperCanvas.drawRect(tile.left,
-                    tile.top,
-                    tile.left + tile.width,
-                    tile.top + tile.height,
-                    paintEmboss);
-
-            mCanvas.drawRect(
-            		tile.left, 
-            		tile.top, 
-            		tile.left + tile.width, 
-            		tile.top + tile.height, 
-            		mPaintGrad);
-            tile.draw(mCanvas);
-        }
-
-        paintEmboss.setMaskFilter(filter);
-        Bitmap alpha = mAlphaBitmap.extractAlpha();
-        helperCanvas.drawBitmap(alpha, 0, 0, paintEmboss);
-        Log.d("prepareBitmaps", "mScale = " + mScale);
-        Log.d("prepareBitmaps", "offset = (" + mOffset[0] + ", " + mOffset[1] + ")");
-   }
-    
     @Override
     protected void onSizeChanged(int w, int h, int oldW, int oldH) {
         super.onSizeChanged(w, h, oldW, oldH);
@@ -371,37 +327,59 @@ public class MyView extends View {
         	mMatrix.getValues(mValues);
             float oldX = mValues[Matrix.MTRANS_X];
             float oldY = mValues[Matrix.MTRANS_Y];
-            //float scaleX = mValues[Matrix.MSCALE_X];
-            //float scaleY = mValues[Matrix.MSCALE_Y];
-            
+
             float dX = mScroller.getCurrX() - oldX;
             float dY = mScroller.getCurrY() - oldY;
-/*            
-            Log.d("onDraw", "oldX=" + oldX + ", oldY=" + oldY +
-            		", getCurrX()=" + mScroller.getCurrX() + ", getCurrY()=" + mScroller.getCurrY());
-*/
+
             mMatrix.postTranslate(dX, dY);
             postInvalidateDelayed(30);
         }
 
         canvas.concat(mMatrix);
 
-        mGameBoard.draw(canvas);
-/*
-        // show the red line connecting gradient end points
-        canvas.drawLine(
-    		mGradStart.x,
-			mGradStart.y,
-			mGradEnd.x,
-			mGradEnd.y,
-			mPaintRed);
-*/
-        paintEmboss.setAlpha(255); //todo change alpha here
-        if(mAlphaBitmap!= null)canvas.drawBitmap(mAlphaBitmap, 0,0, paintEmboss);
-        if(mBitmap!= null)canvas.drawBitmap(mBitmap, 0, 0, mPaintGrad);
-
+        canvas.drawBitmap(mBitmap,0,0,simplePaint);
         mBigTile.draw(canvas);
     }
+
+    private static final EmbossMaskFilter filter = new EmbossMaskFilter(new float[]{1, 1, 1}, 0.5f, 0.6f, 2f);
+    private static Paint paintEmboss = new Paint();
+    private Paint simplePaint = new Paint();
+    private static Canvas helperCanvas;
+
+    private void prepareBitmaps() {
+        if (mAlphaBitmap == null) {
+            mAlphaBitmap = Bitmap.createBitmap(mBitmap.getWidth(), mBitmap.getHeight(), Bitmap.Config.ARGB_8888);
+            helperCanvas = new Canvas(mAlphaBitmap);
+            paintEmboss = new Paint();
+            paintEmboss.setColor(Color.BLACK);
+            paintEmboss.setAlpha(100);
+            paintEmboss.setMaskFilter(filter);
+        }
+
+        helperCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+        mGameBoard.draw(mCanvas);
+
+        for (SmallTile tile: mTiles) {
+            if (tile.visible) {
+                helperCanvas.drawRect(tile.left, tile.top, tile.left + tile.width, tile.top + tile.height, simplePaint);
+            }
+        }
+
+        Bitmap alpha = mAlphaBitmap.extractAlpha();
+        mCanvas.drawBitmap(alpha, 0, 0, paintEmboss);
+        alpha.recycle();
+
+        for (SmallTile tile: mTiles) {
+            if (tile.visible) {
+                mCanvas.drawRect(tile.left,tile.top,tile.left + tile.width,tile.top + tile.height,mPaintGrad);
+                tile.draw(mCanvas);
+            }
+        }
+
+        Log.d("prepareBitmaps", "mScale = " + mScale);
+        Log.d("prepareBitmaps", "offset = (" + mOffset[0] + ", " + mOffset[1] + ")");
+    }
+
 
     public void scroll(float dX, float dY) {
         mScroller.abortAnimation();
